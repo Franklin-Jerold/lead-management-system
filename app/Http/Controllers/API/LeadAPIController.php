@@ -111,7 +111,7 @@ class LeadAPIController extends Controller
         $offset = ($pageNumber - 1) * $pageSize;
 
         $query = Lead::query();
-        $totalLeads = $query->count(); // Count before pagination
+        $totalLeads = $query->count();
 
         $leads = $query->skip($offset)->take($pageSize)->get()->map(function ($lead) {
             return [
