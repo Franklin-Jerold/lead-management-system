@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Auth;
 
+
 class LeadAPIController extends Controller
 {
 
@@ -140,7 +141,7 @@ class LeadAPIController extends Controller
     {
         $lead = Lead::find($id);
         if (!$lead) {
-            return response()->json(['error' => 'Lead not found'], 404);
+            //return response()->json(['error' => 'Lead not found'], 404);
         }
 
         return response()->json(['data' => $lead], 200);
@@ -151,7 +152,7 @@ class LeadAPIController extends Controller
     {
         $lead = Lead::find($id);
         if (!$lead) {
-            return response()->json(['error' => 'Lead not found'], 404);
+            //return response()->json(['error' => 'Lead not found'], 404);
         }
 
         $lead->deleted_by = Auth::id();
