@@ -3,15 +3,14 @@
 namespace App\Jobs;
 
 use App\Models\Lead;
-use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProcessLeadImport implements ShouldQueue
 {
@@ -19,44 +18,48 @@ class ProcessLeadImport implements ShouldQueue
 
     protected $filePath;
 
-
     public function __construct($filePath)
     {
         $this->filePath = $filePath;
     }
 
 
-    public function handle(): void
+    public function handle()
     {
         try {
+            Log::info('Processing file in background: ' . $this->filePath);
+
 
             $rows = Excel::toArray([], storage_path('app/public/' . $this->filePath))[0];
 
-            Log::info('Processing file: ' . $this->filePath);
 
-            foreach ($rows as $row) {
+            $chunkSize = 1000;
+            $chunks = array_chunk($rows, $chunkSize);
 
-                if (isset($row['property_type'], $row['location'], $row['budget'], $row['bedrooms'], $row['bathrooms'], $row['status'], $row['source'])) {
-                    Lead::firstOrCreate(
-                        [
-                            'property_type' => $row['property_type'],
-                            'location' => $row['location'],
-                            'budget' => $row['budget'],
-                            'bedrooms' => $row['bedrooms'],
-                            'bathrooms' => $row['bathrooms'],
-                            'status' => $row['status'],
-                            'source' => $row['source'],
-                        ],
-                        [
-                            'created_by' => Auth::id(),
-                        ]
-                    );
+            foreach ($chunks as $chunk) {
+                foreach ($chunk as $row) {
+                    if (isset($row['property_type'], $row['location'], $row['budget'], $row['bedrooms'], $row['bathrooms'], $row['status'], $row['source'])) {
+                        Lead::firstOrCreate(
+                            [
+                                'property_type' => $row['property_type'],
+                                'location' => $row['location'],
+                                'budget' => $row['budget'],
+                                'bedrooms' => $row['bedrooms'],
+                                'bathrooms' => $row['bathrooms'],
+                                'status' => $row['status'],
+                                'source' => $row['source'],
+                            ],
+                            [
+                                'created_by' => Auth::id(),
+                            ]
+                        );
+                    }
                 }
             }
 
-            Log::info('Lead import completed successfully.');
+            Log::info('Import completed for file: ' . $this->filePath);
         } catch (\Exception $e) {
-            Log::error('Error processing import: ' . $e->getMessage());
+            Log::error('Import failed: ' . $e->getMessage());
         }
     }
 }
